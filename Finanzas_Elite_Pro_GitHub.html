@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Finanzas Elite Pro</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--bg:#0f172a;--panel:#1e293b;--panel2:#111827;--text:#f8fafc;--muted:#94a3b8;--blue:#3b82f6;--green:#16a34a;--red:#dc2626;--yellow:#f59e0b}
+*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+aside{position:fixed;width:230px;height:100%;background:var(--panel2);padding:20px;overflow:auto}
+aside h2{color:#60a5fa;margin-top:0}
+aside button{width:100%;margin:6px 0;padding:12px;border:0;border-radius:10px;background:#1e40af;color:#fff;cursor:pointer}
+aside button:hover{background:#2563eb}
+main{margin-left:250px;padding:22px;max-width:1400px}
+.panel{display:none}.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}
+.card{padding:20px;border-radius:15px;font-size:16px}.card strong{font-size:25px;display:block;margin-top:8px}
+.income{background:var(--green)}.expense{background:var(--red)}.saving{background:#2563eb}.balance{background:#7c3aed}
+.glass{background:var(--panel);padding:20px;border-radius:15px;margin-top:15px}
+input,select,button.add,button.action{padding:10px;margin:5px;border-radius:8px;border:0}
+input,select{background:#fff;color:#111}
+button.add{background:var(--blue);color:#fff;cursor:pointer}
+button.action{background:#475569;color:#fff;cursor:pointer}
+button.delete{background:#991b1b;color:#fff;border:0;padding:6px 9px;border-radius:6px;cursor:pointer}
+table{width:100%;border-collapse:collapse;background:#fff;color:#111;margin-top:12px}
+th,td{border:1px solid #ddd;padding:9px;text-align:left}th{background:#3b82f6;color:#fff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:15px}.chartbox{height:360px}
+.goal{background:#0f172a;padding:14px;border-radius:12px;margin:10px 0}
+.progress{height:12px;background:#334155;border-radius:8px;overflow:hidden}.progress>div{height:100%;background:#22c55e}
+.small{color:var(--muted);font-size:13px}.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.notice{padding:12px;border-radius:10px;background:#172554;margin-top:10px}
+@media(max-width:900px){aside{position:static;width:auto;height:auto;display:flex;flex-wrap:wrap;gap:5px;align-items:center}aside h2{width:100%;margin-bottom:5px}aside button{width:auto;flex:1;min-width:120px}main{margin-left:0}.cards{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+@media(max-width:600px){.cards{grid-template-columns:1fr}.glass{padding:12px}input,select,button.add,button.action{width:100%;margin:4px 0}}
+</style>
+</head>
+<body>
+<aside>
+<h2>💎 Finanzas Elite</h2>
+<button onclick="show('dashboard')">📊 Dashboard</button>
+<button onclick="show('ingresos')">💰 Ingresos</button>
+<button onclick="show('gastos')">💸 Gastos</button>
+<button onclick="show('ahorros')">🎯 Ahorro</button>
+<button onclick="show('config')">⚙️ Datos y presupuesto</button>
+</aside>
+
+<main>
+<div id="dashboard" class="panel active">
+  <h1>Dashboard</h1>
+  <div class="toolbar">
+    <label>Mes:</label>
+    <select id="filtroMes" onchange="render()">
+      <option value="Todos">Todos</option>
+      <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option>
+      <option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option>
+      <option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+    </select>
+  </div>
+  <div class="cards">
+    <div class="card income">Ingresos<strong id="ti">0,00 €</strong></div>
+    <div class="card expense">Gastos<strong id="tg">0,00 €</strong></div>
+    <div class="card saving">Ahorro / inversión<strong id="ta">0,00 €</strong></div>
+    <div class="card balance">Balance<strong id="tb">0,00 €</strong></div>
+  </div>
+  <div class="grid2">
+    <div class="glass chartbox"><canvas id="graf"></canvas></div>
+    <div class="glass chartbox"><canvas id="grafMes"></canvas></div>
+  </div>
+  <div class="glass"><h3>Resumen de presupuesto</h3><div id="presupuestoResumen"></div></div>
+</div>
+
+<div id="ingresos" class="panel">
+<h2>Ingresos por mes</h2>
+<div class="glass">
+<input id="idesc" placeholder="Concepto"><input id="iimp" type="number" min="0" step="0.01" placeholder="Importe">
+<select id="imes"><option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option><option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option><option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option></select>
+<button class="add" onclick="addIng()">Añadir ingreso</button>
+<table><tbody id="ting"></tbody></table>
+</div></div>
+
+<div id="gastos" class="panel">
+<h2>Gastos por mes</h2>
+<div class="glass">
+<input id="gdesc" placeholder="Concepto"><input id="gimp" type="number" min="0" step="0.01" placeholder="Importe">
+<select id="gcat"><option>Vivienda</option><option>Comida</option><option>Transporte</option><option>Ocio</option><option>Suscripciones</option><option>Salud</option><option>Otros</option></select>
+<select id="gmes"><option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option><option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option><option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option></select>
+<button class="add" onclick="addGas()">Añadir gasto</button>
+<table><tbody id="tgas"></tbody></table>
+</div></div>
+
+<div id="ahorros" class="panel">
+<h2>Ahorro e inversiones</h2>
+<div class="glass">
+<input id="aobj" placeholder="Objetivo"><input id="aimp" type="number" min="0" step="0.01" placeholder="Ahorrado">
+<input id="aobjetivo" type="number" min="0" step="0.01" placeholder="Meta total (opcional)">
+<button class="add" onclick="addAho()">Guardar objetivo</button>
+<div id="taho"></div>
+</div></div>
+
+<div id="config" class="panel">
+<h2>Presupuesto y datos</h2>
+<div class="glass">
+<h3>Presupuesto mensual por categoría</h3>
+<select id="pcat"><option>Vivienda</option><option>Comida</option><option>Transporte</option><option>Ocio</option><option>Suscripciones</option><option>Salud</option><option>Otros</option></select>
+<input id="pimp" type="number" min="0" step="0.01" placeholder="Límite €">
+<button class="add" onclick="setPresupuesto()">Guardar límite</button>
+<div id="listaPresupuestos"></div>
+</div>
+<div class="glass">
+<h3>Copias de seguridad</h3>
+<button class="action" onclick="exportar()">⬇️ Exportar datos</button>
+<button class="action" onclick="document.getElementById('importFile').click()">⬆️ Importar datos</button>
+<input id="importFile" type="file" accept=".json" style="display:none" onchange="importar(event)">
+<div class="small">Los datos se guardan en este dispositivo mediante localStorage. Exporta una copia si vas a cambiar de dispositivo.</div>
+</div>
+</div>
+</main>
+
+<script>
+const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const cats=['Vivienda','Comida','Transporte','Ocio','Suscripciones','Salud','Otros'];
+let db=JSON.parse(localStorage.getItem('elite')||'{"ing":[],"gas":[],"aho":[],"pres":{}}');
+db.pres=db.pres||{};
+let ch,chMes;
+
+function save(){localStorage.setItem('elite',JSON.stringify(db));render()}
+function euro(n){return Number(n||0).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'}
+function show(x){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById(x).classList.add('active');render()}
+function val(id){return document.getElementById(id).value}
+
+function addIng(){
+ let d=val('idesc').trim(),i=Number(val('iimp')),m=val('imes');
+ if(!d||i<=0)return alert('Introduce un concepto y un importe válido.');
+ db.ing.push({id:Date.now(),d,i,m});document.getElementById('idesc').value='';document.getElementById('iimp').value='';save()
+}
+function addGas(){
+ let d=val('gdesc').trim(),i=Number(val('gimp')),c=val('gcat'),m=val('gmes');
+ if(!d||i<=0)return alert('Introduce un concepto y un importe válido.');
+ db.gas.push({id:Date.now(),d,i,c,m});document.getElementById('gdesc').value='';document.getElementById('gimp').value='';save()
+}
+function addAho(){
+ let o=val('aobj').trim(),i=Number(val('aimp')),meta=Number(val('aobjetivo'))||0;
+ if(!o||i<0)return alert('Introduce un objetivo válido.');
+ db.aho.push({id:Date.now(),o,i,meta});document.getElementById('aobj').value='';document.getElementById('aimp').value='';document.getElementById('aobjetivo').value='';save()
+}
+function del(tipo,id){if(confirm('¿Eliminar este registro?')){db[tipo]=db[tipo].filter(x=>x.id!==id);save()}}
+function setPresupuesto(){let c=val('pcat'),i=Number(val('pimp'));if(i<=0)return alert('Introduce un límite válido.');db.pres[c]=i;save();document.getElementById('pimp').value=''}
+
+function filtro(x){let f=val('filtroMes');return f==='Todos'||x.m===f}
+function render(){
+ let ing=0,gas=0,sav=0;
+ const ingF=db.ing.filter(filtro),gasF=db.gas.filter(filtro);
+ ingF.forEach(x=>ing+=x.i);gasF.forEach(x=>gas+=x.i);db.aho.forEach(x=>sav+=x.i);
+ ti.textContent=euro(ing);tg.textContent=euro(gas);ta.textContent=euro(sav);tb.textContent=euro(ing-gas+sav);
+
+ ting.innerHTML='<tr><th>Mes</th><th>Concepto</th><th>Importe</th><th></th></tr>'+ingF.map(x=>`<tr><td>${x.m}</td><td>${escapeHtml(x.d)}</td><td>${euro(x.i)}</td><td><button class="delete" onclick="del('ing',${x.id})">Eliminar</button></td></tr>`).join('');
+ tgas.innerHTML='<tr><th>Mes</th><th>Concepto</th><th>Categoría</th><th>Importe</th><th></th></tr>'+gasF.map(x=>`<tr><td>${x.m}</td><td>${escapeHtml(x.d)}</td><td>${x.c}</td><td>${euro(x.i)}</td><td><button class="delete" onclick="del('gas',${x.id})">Eliminar</button></td></tr>`).join('');
+ taho.innerHTML=db.aho.map(x=>{let p=x.meta>0?Math.min(100,x.i/x.meta*100):null;return `<div class="goal"><b>${escapeHtml(x.o)}</b><br>Ahorrado: ${euro(x.i)}${x.meta?` / ${euro(x.meta)}`:''}${p!==null?`<div class="progress"><div style="width:${p}%"></div></div><span class="small">${p.toFixed(0)}% completado</span>`:''}<br><button class="delete" onclick="del('aho',${x.id})">Eliminar</button></div>`}).join('')||'<div class="small">Todavía no tienes objetivos de ahorro.</div>';
+ listaPresupuestos.innerHTML=cats.map(c=>`<div class="goal"><b>${c}</b>: ${db.pres[c]?euro(db.pres[c]):'Sin límite'}</div>`).join('');
+ renderPresupuesto(gasF);
+ draw(ing,gas,sav);drawMes();
+}
+function renderPresupuesto(gastos){
+ let f=val('filtroMes'),arr=cats.map(c=>{let used=gastos.filter(x=>x.c===c).reduce((a,x)=>a+x.i,0),lim=db.pres[c]||0;return {c,used,lim}}).filter(x=>x.lim>0);
+ presupuestoResumen.innerHTML=arr.length?arr.map(x=>{let p=x.used/x.lim*100;return `<div class="goal"><b>${x.c}</b> — ${euro(x.used)} de ${euro(x.lim)}${f==='Todos'?' (según filtro seleccionado)':''}<div class="progress"><div style="width:${Math.min(100,p)}%;background:${p>100?'#ef4444':'#22c55e'}"></div></div><span class="small">${p.toFixed(0)}% utilizado</span></div>`}).join(''):'<div class="small">Configura límites por categoría para ver tu presupuesto.</div>'
+}
+function draw(ing,gas,sav){
+ if(ch)ch.destroy();
+ ch=new Chart(graf,{type:'doughnut',data:{labels:['Ingresos','Gastos','Ahorro/Inversión'],datasets:[{data:[ing,gas,sav]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#fff'}}}}})
+}
+function drawMes(){
+ if(chMes)chMes.destroy();
+ const dataIng=meses.map(m=>db.ing.filter(x=>x.m===m).reduce((a,x)=>a+x.i,0));
+ const dataGas=meses.map(m=>db.gas.filter(x=>x.m===m).reduce((a,x)=>a+x.i,0));
+ chMes=new Chart(grafMes,{type:'bar',data:{labels:meses,datasets:[{label:'Ingresos',data:dataIng},{label:'Gastos',data:dataGas}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{ticks:{color:'#fff'}},y:{ticks:{color:'#fff'}}},plugins:{legend:{labels:{color:'#fff'}}}}})
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function exportar(){
+ const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');
+ a.href=URL.createObjectURL(blob);a.download='finanzas-elite-backup.json';a.click();URL.revokeObjectURL(a.href)
+}
+function importar(e){
+ const file=e.target.files[0];if(!file)return;
+ const r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!x.ing||!x.gas||!x.aho)throw Error();db=x;db.pres=db.pres||{};save();alert('Datos importados correctamente.')}catch(err){alert('El archivo no tiene un formato válido.')}};r.readAsText(file)
+}
+render();
+</script>
+</body>
+</html>
